@@ -1,71 +1,51 @@
 #include "monty.h"
+#include <stdio.h>
+#define _GNU_SOURCE
+#include <stdlib.h>
 
-stack_t *g_stack = NULL;
-
-/**
-* push - pushes an element onto the stack.
-* @stack: Double pointer to the beginning of the stack.
-* @value: The value to push onto the stack.
-*
-* Description: Allocates a new node and pushes it onto the stack.
-*/
-void push(stack_t **stack, int value)
-{
-stack_t *new_node = malloc(sizeof(stack_t));
-if (new_node == NULL)
-{
-fprintf(stderr, "Error: malloc failed\n");
-exit(EXIT_FAILURE);
-}
-
-new_node->n = value;
-new_node->prev = NULL;
-new_node->next = *stack;
-
-if (*stack != NULL)
-{
-(*stack)->prev = new_node;
-}
-
-*stack = new_node;
-printf("push %d$\n", value);
-}
+bus_t bus = {NULL, NULL, NULL, 0};
 
 /**
-* pall - Prints all values on the stack.
-* @stack: Double pointer to the beginning of the stack.
+* main - function for monty code interpreter
+* @argc: argument count
+* @argv: argument value
 *
-* Description: Prints each element in the stack.
+* Return: 0 on success
 */
-void pall(stack_t **stack)
+int main(int argc, char *argv[])
 {
-stack_t *current = *stack;
-while (current != NULL)
-{
-printf("%d\n", current->n);
-current = current->next;
-}
-}
+	char *content;
+	FILE *file;
+	size_t size = 0;
+	ssize_t read_line = 1;
+	stack_t *stack = NULL;
+	unsigned int counter = 0;
 
-/**
-* main - Entry point
-*
-* Description: Demonstrates the usage of push and pall operations.
-*/
-int main()
-{
-push(&g_stack, 1);
-push(&g_stack, 2);
-push(&g_stack, 3);
-printf("pall$\n");
-
-pall(&g_stack);
-
-while (g_stack != NULL)
-{
-stack_t *temp = g_stack;
-g_stack = g_stack->next;
-free(temp);
-}
+	if (argc != 2)
+	{
+		fprintf(stderr, "USAGE: monty file\n");
+		exit(EXIT_FAILURE);
+	}
+	file = fopen(argv[1], "r");
+	bus.file = file;
+	if (!file)
+	{
+		fprintf(stderr, "Error: Can't open file %s\n", argv[1]);
+		exit(EXIT_FAILURE);
+	}
+	while (read_line > 0)
+	{
+		content = NULL;
+		read_line = getline(&content, &size, file);
+		bus.content = content;
+		counter++;
+		if (read_line > 0)
+		{
+			execute(content, &stack, counter, file);
+		}
+		free(content);
+	}
+	free_stack(stack);
+	fclose(file);
 return (0);
 }
